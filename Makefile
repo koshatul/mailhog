@@ -1,4 +1,4 @@
-DOCKER_REPO := "mailhog"
+DOCKER_REPO ?= koshatul/mailhog
 
 GO_MATRIX_OS := darwin linux
 #freebsd linux netbsd openbsd windows
