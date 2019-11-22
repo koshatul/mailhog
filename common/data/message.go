@@ -292,18 +292,18 @@ func ContentFromString(data string) *Content {
 		for _, hdr := range hdrs {
 			if lastHdr != "" && (strings.HasPrefix(hdr, " ") || strings.HasPrefix(hdr, "\t")) {
 				h[lastHdr][len(h[lastHdr])-1] = h[lastHdr][len(h[lastHdr])-1] + hdr
-			} else if strings.Contains(hdr, ": ") {
-				y := strings.SplitN(hdr, ": ", 2)
-				key, value := y[0], y[1]
-				// TODO multiple header fields
-				h[key] = []string{value}
-				lastHdr = key
 			} else if strings.Contains(hdr, ":") {
-				// I can't find anywhere in the standard where a space after the colon is required.
-				// https://tools.ietf.org/html/rfc2822#appendix-A.5 seems to be legal.
 				y := strings.SplitN(hdr, ":", 2)
-				key, value := y[0], y[1]
+				key, value := y[0], strings.TrimPrefix(y[1], " ")
 				// TODO multiple header fields
+				switch strings.ToLower(key) {
+				case "from":
+					key = "From"
+				case "to":
+					key = "To"
+				case "subject":
+					key = "Subject"
+				}
 				h[key] = []string{value}
 				lastHdr = key
 			} else if len(hdr) > 0 {
