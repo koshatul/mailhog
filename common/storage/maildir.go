@@ -166,8 +166,7 @@ func (maildir *Maildir) List(start, limit int) ([]data.Message, error) {
 			return nil, err
 		}
 		msg := data.FromBytes(b)
-		// FIXME domain
-		m := msg.Parse("mailhog.example")
+		m := msg.Parse(maildir.Hostname)
 		m.ID = data.MessageID(fileinfo.Name())
 		m.Created = fileinfo.ModTime()
 		messages = append(messages, *m)

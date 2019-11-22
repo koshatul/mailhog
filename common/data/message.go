@@ -42,10 +42,6 @@ func NewMessageID(hostname string) (MessageID, error) {
 	return MessageID(rs + "@" + hostname), nil
 }
 
-// Messages represents an array of Messages
-// - TODO is this even required?
-type Messages []Message
-
 // Message represents a parsed SMTP message
 type Message struct {
 	ID      MessageID
