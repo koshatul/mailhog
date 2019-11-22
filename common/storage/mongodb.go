@@ -50,8 +50,8 @@ func (mongo *MongoDB) Count() int {
 }
 
 // Search finds messages matching the query
-func (mongo *MongoDB) Search(kind, query string, start, limit int) (*data.Messages, int, error) {
-	messages := &data.Messages{}
+func (mongo *MongoDB) Search(kind, query string, start, limit int) ([]data.Message, int, error) {
+	messages := []data.Message{}
 	var count = 0
 	var field = "raw.data"
 	switch kind {
@@ -80,8 +80,8 @@ func (mongo *MongoDB) Search(kind, query string, start, limit int) (*data.Messag
 }
 
 // List returns a list of messages by index
-func (mongo *MongoDB) List(start int, limit int) (*data.Messages, error) {
-	messages := &data.Messages{}
+func (mongo *MongoDB) List(start int, limit int) ([]data.Message, error) {
+	messages := []data.Message{}
 	err := mongo.Collection.Find(bson.M{}).Skip(start).Limit(limit).Sort("-created").Select(bson.M{
 		"id":              1,
 		"_id":             1,

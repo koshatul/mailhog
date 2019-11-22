@@ -110,9 +110,9 @@ func (apiv2 *APIv2) messages(w http.ResponseWriter, req *http.Request) {
 		panic(err)
 	}
 
-	res.Count = len([]data.Message(*messages))
+	res.Count = len(messages)
 	res.Start = start
-	res.Items = []data.Message(*messages)
+	res.Items = messages
 	res.Total = apiv2.config.Storage.Count()
 
 	bytes, _ := json.Marshal(res)
@@ -143,9 +143,9 @@ func (apiv2 *APIv2) search(w http.ResponseWriter, req *http.Request) {
 
 	messages, total, _ := apiv2.config.Storage.Search(kind, query, start, limit)
 
-	res.Count = len([]data.Message(*messages))
+	res.Count = len(messages)
 	res.Start = start
-	res.Items = []data.Message(*messages)
+	res.Items = messages
 	res.Total = total
 
 	b, _ := json.Marshal(res)

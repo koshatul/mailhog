@@ -38,10 +38,10 @@ func (memory *InMemory) Count() int {
 }
 
 // Search finds messages matching the query
-func (memory *InMemory) Search(kind, query string, start, limit int) (*data.Messages, int, error) {
+func (memory *InMemory) Search(kind, query string, start, limit int) ([]data.Message, int, error) {
 	// FIXME needs optimising, or replacing with a proper db!
 	query = strings.ToLower(query)
-	var filteredMessages = make([]*data.Message, 0)
+	var filteredMessages = make([]data.Message, 0)
 	for _, m := range memory.Messages {
 		doAppend := false
 
@@ -93,15 +93,14 @@ func (memory *InMemory) Search(kind, query string, start, limit int) (*data.Mess
 		}
 
 		if doAppend {
-			filteredMessages = append(filteredMessages, m)
+			filteredMessages = append(filteredMessages, *m)
 		}
 	}
 
 	var messages = make([]data.Message, 0)
 
 	if len(filteredMessages) == 0 || start > len(filteredMessages) {
-		msgs := data.Messages(messages)
-		return &msgs, 0, nil
+		return messages, 0, nil
 	}
 
 	if start+limit > len(filteredMessages) {
@@ -120,20 +119,18 @@ func (memory *InMemory) Search(kind, query string, start, limit int) (*data.Mess
 
 	for i := start; i > end; i-- {
 		//for _, m := range memory.MessageIndex[start:end] {
-		messages = append(messages, *filteredMessages[i])
+		messages = append(messages, filteredMessages[i])
 	}
 
-	msgs := data.Messages(messages)
-	return &msgs, len(filteredMessages), nil
+	return messages, len(filteredMessages), nil
 }
 
 // List lists stored messages by index
-func (memory *InMemory) List(start int, limit int) (*data.Messages, error) {
+func (memory *InMemory) List(start int, limit int) ([]data.Message, error) {
 	var messages = make([]data.Message, 0)
 
 	if len(memory.Messages) == 0 || start > len(memory.Messages) {
-		msgs := data.Messages(messages)
-		return &msgs, nil
+		return messages, nil
 	}
 
 	if start+limit > len(memory.Messages) {
@@ -155,8 +152,7 @@ func (memory *InMemory) List(start int, limit int) (*data.Messages, error) {
 		messages = append(messages, *memory.Messages[i])
 	}
 
-	msgs := data.Messages(messages)
-	return &msgs, nil
+	return messages, nil
 }
 
 // DeleteOne deletes an individual message by storage ID

@@ -104,7 +104,7 @@ func (m *SMTPMessage) Parse(hostname string) *Message {
 	}
 
 	if msg.Content.IsMIME() {
-		logf("Parsing MIME body")
+		// logf("Parsing MIME body")
 		msg.MIME = msg.Content.ParseMIMEBody()
 	}
 
@@ -231,9 +231,9 @@ func (content *Content) ParseMIMEBody() *MIMEBody {
 			var p []string
 			if len(boundary) > 0 {
 				p = strings.Split(content.Body, "--"+boundary)
-				logf("Got boundary: %s", boundary)
+				// logf("Got boundary: %s", boundary)
 			} else {
-				logf("Boundary not found: %s", hdr[0])
+				// logf("Boundary not found: %s", hdr[0])
 			}
 
 			for _, s := range p {
@@ -282,7 +282,7 @@ func PathFromString(path string) *Path {
 
 // ContentFromString parses SMTP content into separate headers and body
 func ContentFromString(data string) *Content {
-	logf("Parsing Content from string: '%s'", data)
+	// logf("Parsing Content from string: '%s'", data)
 	x := strings.SplitN(data, "\r\n\r\n", 2)
 	h := make(map[string][]string, 0)
 
@@ -298,6 +298,14 @@ func ContentFromString(data string) *Content {
 				h[lastHdr][len(h[lastHdr])-1] = h[lastHdr][len(h[lastHdr])-1] + hdr
 			} else if strings.Contains(hdr, ": ") {
 				y := strings.SplitN(hdr, ": ", 2)
+				key, value := y[0], y[1]
+				// TODO multiple header fields
+				h[key] = []string{value}
+				lastHdr = key
+			} else if strings.Contains(hdr, ":") {
+				// I can't find anywhere in the standard where a space after the colon is required.
+				// https://tools.ietf.org/html/rfc2822#appendix-A.5 seems to be legal.
+				y := strings.SplitN(hdr, ":", 2)
 				key, value := y[0], y[1]
 				// TODO multiple header fields
 				h[key] = []string{value}

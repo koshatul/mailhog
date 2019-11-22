@@ -86,7 +86,7 @@ func Configure() *Config {
 		}
 	case "maildir":
 		log.Println("Using maildir message storage")
-		s := storage.CreateMaildir(cfg.MaildirPath)
+		s := storage.CreateMaildir(cfg.MaildirPath, cfg.Hostname)
 		cfg.Storage = s
 	default:
 		log.Fatalf("Invalid storage type %s", cfg.StorageType)

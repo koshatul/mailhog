@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/koshatul/mailhog/common/data"
@@ -13,11 +14,12 @@ import (
 
 // Maildir is a maildir storage backend
 type Maildir struct {
-	Path string
+	Path     string
+	Hostname string
 }
 
 // CreateMaildir creates a new maildir storage backend
-func CreateMaildir(path string) *Maildir {
+func CreateMaildir(path, hostname string) *Maildir {
 	if len(path) == 0 {
 		dir, err := ioutil.TempDir("", "mailhog")
 		if err != nil {
@@ -33,7 +35,8 @@ func CreateMaildir(path string) *Maildir {
 	}
 	log.Println("Maildir path is", path)
 	return &Maildir{
-		Path: path,
+		Path:     path,
+		Hostname: hostname,
 	}
 }
 
@@ -61,7 +64,7 @@ func (maildir *Maildir) Count() int {
 }
 
 // Search finds messages matching the query
-func (maildir *Maildir) Search(kind, query string, start, limit int) (*data.Messages, int, error) {
+func (maildir *Maildir) Search(kind, query string, start, limit int) ([]data.Message, int, error) {
 	query = strings.ToLower(query)
 	var filteredMessages = make([]data.Message, 0)
 
@@ -119,12 +122,11 @@ func (maildir *Maildir) Search(kind, query string, start, limit int) (*data.Mess
 		log.Println(err)
 	}
 
-	msgs := data.Messages(filteredMessages)
-	return &msgs, len(filteredMessages), nil
+	return filteredMessages, len(filteredMessages), nil
 }
 
 // List lists stored messages by index
-func (maildir *Maildir) List(start, limit int) (*data.Messages, error) {
+func (maildir *Maildir) List(start, limit int) ([]data.Message, error) {
 	log.Println("Listing messages in", maildir.Path)
 	messages := make([]data.Message, 0)
 
@@ -138,6 +140,25 @@ func (maildir *Maildir) List(start, limit int) (*data.Messages, error) {
 	if err != nil {
 		return nil, err
 	}
+	sort.Slice(n, func(i, j int) bool {
+		return !n[i].ModTime().Before(n[j].ModTime())
+	})
+
+	if start < 0 {
+		start = 0
+	}
+
+	if len(n) < start+limit {
+		limit = len(n) - start
+	}
+
+	if len(n) > start && start > 0 {
+		n = n[start:]
+	}
+
+	if len(n) > limit {
+		n = n[:limit]
+	}
 
 	for _, fileinfo := range n {
 		b, err := ioutil.ReadFile(filepath.Join(maildir.Path, fileinfo.Name()))
@@ -146,15 +167,14 @@ func (maildir *Maildir) List(start, limit int) (*data.Messages, error) {
 		}
 		msg := data.FromBytes(b)
 		// FIXME domain
-		m := *msg.Parse("mailhog.example")
+		m := msg.Parse("mailhog.example")
 		m.ID = data.MessageID(fileinfo.Name())
 		m.Created = fileinfo.ModTime()
-		messages = append(messages, m)
+		messages = append(messages, *m)
 	}
 
 	log.Printf("Found %d messages", len(messages))
-	msgs := data.Messages(messages)
-	return &msgs, nil
+	return messages, nil
 }
 
 // DeleteOne deletes an individual message by storage ID

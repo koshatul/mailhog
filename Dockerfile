@@ -1,29 +1,28 @@
-#
-# MailHog Dockerfile
-#
+#######################################################
+## MailHog Dockerfile
+## First Stage: builder
+FROM golang:1.13-alpine AS builder
 
-FROM golang:alpine
+### Building MailHog:
+COPY . /code
+WORKDIR /code
+RUN go install .
 
-# Install MailHog:
-RUN apk --no-cache add --virtual build-dependencies \
-    git \
-  && mkdir -p /root/gocode \
-  && export GOPATH=/root/gocode \
-  && go get github.com/mailhog/MailHog \
-  && mv /root/gocode/bin/MailHog /usr/local/bin \
-  && rm -rf /root/gocode \
-  && apk del --purge build-dependencies
+## Second Stage: final
+FROM golang:1.13-alpine
 
-# Add mailhog user/group with uid/gid 1000.
-# This is a workaround for boot2docker issue #581, see
-# https://github.com/boot2docker/boot2docker/issues/581
+COPY --from=builder /go/bin/mailhog /usr/local/bin/mailhog
+
+### Add mailhog user/group with uid/gid 1000.
+### This is a workaround for boot2docker issue #581, see
+### https://github.com/boot2docker/boot2docker/issues/581
 RUN adduser -D -u 1000 mailhog
 
 USER mailhog
 
 WORKDIR /home/mailhog
 
-ENTRYPOINT ["MailHog"]
+ENTRYPOINT ["/usr/local/bin/mailhog"]
 
-# Expose the SMTP and HTTP ports:
+### Expose the SMTP and HTTP ports:
 EXPOSE 1025 8025

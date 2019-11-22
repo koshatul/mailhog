@@ -58,7 +58,7 @@ func TestSocketError(t *testing.T) {
 
 func TestAcceptMessage(t *testing.T) {
 	Convey("acceptMessage should be called", t, func() {
-		mbuf := "EHLO localhost\nMAIL FROM:<test>\nRCPT TO:<test>\nDATA\nHi.\r\n.\r\nQUIT\n"
+		mbuf := "EHLO localhost\r\nMAIL FROM:<test>\r\nRCPT TO:<test>\r\nDATA\r\nHi.\r\n.\r\nQUIT\r\n"
 		var rbuf []byte
 		frw := &fakeRw{
 			_read: func(p []byte) (n int, err error) {
@@ -94,8 +94,8 @@ func TestAcceptMessage(t *testing.T) {
 			handlerCalled = true
 			<-mChan
 			//FIXME breaks some tests (in drone.io)
-			//m := <-mChan
-			//So(m, ShouldNotBeNil)
+			// m := <-mChan
+			// So(m, ShouldNotBeNil)
 			wg.Done()
 		}()
 		Accept("1.1.1.1:11111", frw, storage.CreateInMemory(), mChan, "localhost", nil)

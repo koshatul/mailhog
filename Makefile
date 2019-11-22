@@ -1,53 +1,31 @@
-VERSION=1.0.0
+DOCKER_REPO := "mailhog"
 
-.PHONY: all combined release fmt release-deps pull tag
+GO_MATRIX_OS := darwin linux
+#freebsd linux netbsd openbsd windows
+GO_MATRIX_ARCH := 386 amd64
 
-all: bindata fmt combined ui
+GENERATED_FILES += ui/assets/assets.go
 
-combined:
-	# go install .
+DOCKER_BUILD_REQ += $(shell find ./ -name '*.go')
+DOCKER_BUILD_REQ += $(GENERATED_FILES)
 
-release: tag release-deps 
-	# gox -ldflags "-X main.version=${VERSION}" -output="build/{{.Dir}}_{{.OS}}_{{.Arch}}" .
+-include .makefiles/Makefile
+-include .makefiles/pkg/go/v1/Makefile
+-include .makefiles/pkg/docker/v1/Makefile
 
-fmt:
-	go fmt ./...
+.makefiles/%:
+	@curl -sfL https://makefiles.dev/v1 | bash /dev/stdin "$@"
 
-release-deps:
-	# go get github.com/mitchellh/gox
+######################
+## UI Assets
+######################
 
-# pull:
-# 	git pull
-# 	cd ../data; git pull
-# 	cd ../http; git pull
-# 	cd ../MailHog-Server; git pull
-# 	cd ../MailHog-UI; git pull
-# 	cd ../smtp; git pull
-# 	cd ../storage; git pull
+GO_BINDATA := artifacts/go-bindata/bin/go-bindata
+$(GO_BINDATA):
+	GO111MODULE=off GOBIN="$(MF_PROJECT_ROOT)/$(@D)" go get github.com/jteeuwen/go-bindata/...
 
-# tag:
-# 	git tag -a -m 'v${VERSION}' v${VERSION} && git push origin v${VERSION}
-# 	cd ../data; git tag -a -m 'v${VERSION}' v${VERSION} && git push origin v${VERSION}
-# 	cd ../http; git tag -a -m 'v${VERSION}' v${VERSION} && git push origin v${VERSION}
-# 	cd ../MailHog-Server; git tag -a -m 'v${VERSION}' v${VERSION} && git push origin v${VERSION}
-# 	cd ../MailHog-UI; git tag -a -m 'v${VERSION}' v${VERSION} && git push origin v${VERSION}
-# 	cd ../smtp; git tag -a -m 'v${VERSION}' v${VERSION} && git push origin v${VERSION}
-# 	cd ../storage; git tag -a -m 'v${VERSION}' v${VERSION} && git push origin v${VERSION}
+_ASSETS := $(shell find ui/assets/ -type f)
 
-
-# all: fmt ui
-
-# ui:
-# 	go install .
-
-# bindata: bindata-deps
-# 	-rm assets/assets.go
-# 	go-bindata -o assets/assets.go -pkg assets assets/...
-
-# bindata-deps:
-# 	go get github.com/jteeuwen/go-bindata/...
-
-# fmt:
-# 	go fmt ./...
-
-# .PNONY: all ui bindata bindata-deps fmt
+ui/assets/assets.go: $(_ASSETS) | $(GO_BINDATA)
+	-rm "$(@)"
+	cd ui && ../$(GO_BINDATA) -o assets/assets.go -pkg assets assets/...
